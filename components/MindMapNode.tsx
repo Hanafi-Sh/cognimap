@@ -268,9 +268,9 @@ export const MindMapNode: React.FC<MindMapNodeProps> = ({
     try {
       await onLearn(node.id, promptInput);
       setMode('idle');
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert("Gagal membuat konten. Silakan coba lagi.");
+      alert(`Gagal membuat konten: ${e.message || "Terjadi kesalahan tidak diketahui"}`);
       setMode('input');
     } finally {
       isManualLoadingRef.current = false;

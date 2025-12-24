@@ -15,7 +15,7 @@ const getAiClient = (): GoogleGenAI => {
   return aiClient;
 };
 
-const MODEL_NAME = 'gemini-1.5-flash';
+const MODEL_NAME = 'gemini-2.5-flash';
 
 // --- HELPER: Generate Concise Title ---
 export const generateTopicTitle = async (userPrompt: string): Promise<string> => {

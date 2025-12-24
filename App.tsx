@@ -344,7 +344,7 @@ const App: React.FC = () => {
             setNodes(prev => computeSmartLayout([...prev, ...newNodes]));
          } catch (e) {
              console.error("Error expanding chapter manually", e);
-             alert("Gagal menguraikan bab.");
+             throw e; // Lempar error agar ditangkap oleh MindMapNode
          }
     }
     else if (node.nodeType === 'subchapter') {
