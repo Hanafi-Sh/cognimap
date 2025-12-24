@@ -1,0 +1,5 @@
+{
+  "name": "CogniMap",
+  "description": "An interactive, infinite canvas-based learning platform that visualizes hierarchical knowledge structures with a focus on deep learning.",
+  "requestFramePermissions": []
+}
