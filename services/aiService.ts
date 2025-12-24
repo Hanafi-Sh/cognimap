@@ -15,7 +15,8 @@ const getAiClient = (): GoogleGenAI => {
   return aiClient;
 };
 
-const MODEL_NAME = 'gemini-2.5-flash';
+const MODEL_NAME_FLASH = 'gemini-3-flash-preview';
+const MODEL_NAME_PRO = MODEL_NAME_FLASH;
 
 // --- HELPER: Generate Concise Title ---
 export const generateTopicTitle = async (userPrompt: string): Promise<string> => {
@@ -28,7 +29,7 @@ export const generateTopicTitle = async (userPrompt: string): Promise<string> =>
   `;
   
   const response = await getAiClient().models.generateContent({
-    model: MODEL_NAME,
+    model: MODEL_NAME_FLASH,
     contents: [{role: "user", parts: [{ text: prompt }] }],
     config: {
         responseMimeType: 'text/plain'
@@ -56,7 +57,7 @@ export const generateChapters = async (topic: string, userContext: string): Prom
   `;
 
   const result = await getAiClient().models.generateContent({
-    model: MODEL_NAME,
+    model: MODEL_NAME_PRO,
     contents: [{role: "user", parts: [{ text: prompt }] }],
     config: {
       responseMimeType: 'application/json',
@@ -93,15 +94,15 @@ export const generateSubChapters = async (parentTopic: string, chapterTitle: str
     Task: Untuk bab "${chapterTitle}" (dalam konteks topik: "${parentTopic}"), uraikan menjadi daftar Sub-bab yang mendetail.
     Context: ${userContext}
     Constraint:
-    1. Gunakan Bahasa Indonesia.
-    2. **Cakupan**: Buatlah cukup banyak sub-bab (misalnya 5-8 sub-bab) untuk memastikan bab ini dibahas tuntas dan mendalam. Jangan terlalu singkat.
-    3. **Format**: Berikan judul sub-bab dan daftar "Poin Pembelajaran" (3-5 butir spesifik per sub-bab).
+    1. Gunakan Bahasa Indonesia dan jelaskan secara sistematis urut dari topik-topik sebelumnya. Dengan target akhir adalah user bisa memahami materi secara mendalam.
+    2. **Cakupan**: Buatlah cukup banyak sub-bab (misalnya 1-8 sub-bab) untuk memastikan bab ini dibahas tuntas dan mendalam. Jangan terlalu singkat (Tapi tergantung dengan lingkup topik. jika topik luas, maka berikan sebanyak-banyaknya).
+    3. **Format**: Berikan judul sub-bab dan daftar "Poin Pembelajaran" (1-5 butir spesifik per sub-bab).
     4. Poin-poin harus konkret dan siap untuk dijelaskan secara mendalam nanti.
     5. **No Numbering**: JANGAN sertakan nomor sub-bab dalam field title (misal: "1.1. Konsep"). Cukup judulnya saja (misal: "Konsep").
   `;
 
   const result = await getAiClient().models.generateContent({
-    model: MODEL_NAME,
+    model: MODEL_NAME_PRO,
     contents: [{role: "user", parts: [{ text: prompt }] }],
     config: {
       responseMimeType: 'application/json',
@@ -164,7 +165,7 @@ export const generateDetails = async (subChapterTitle: string, contextPath: stri
   `;
 
   const result = await getAiClient().models.generateContent({
-    model: MODEL_NAME,
+    model: MODEL_NAME_PRO,
     contents: [{role: "user", parts: [{ text: prompt }] }],
     config: {
       responseMimeType: 'application/json',
