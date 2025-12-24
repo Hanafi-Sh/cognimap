@@ -1,10 +1,21 @@
 
-import { GoogleGenAI, Type, Schema } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { GeneratedChapter, GeneratedSubChapter, GeneratedDetail } from '../types';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+let aiClient: GoogleGenAI | null = null;
 
-const MODEL_NAME = 'gemini-3-pro-preview';
+const getAiClient = (): GoogleGenAI => {
+  const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
+  if (!apiKey) {
+    throw new Error("VITE_GOOGLE_API_KEY environment variable not set. Please create a .env.local file and add it.");
+  }
+  if (!aiClient) {
+    aiClient = new GoogleGenAI({ apiKey });
+  }
+  return aiClient;
+};
+
+const MODEL_NAME = 'gemini-1.5-flash';
 
 // --- HELPER: Generate Concise Title ---
 export const generateTopicTitle = async (userPrompt: string): Promise<string> => {
@@ -16,15 +27,15 @@ export const generateTopicTitle = async (userPrompt: string): Promise<string> =>
     Bahasa: Indonesia.
   `;
   
-  const response = await ai.models.generateContent({
+  const response = await getAiClient().models.generateContent({
     model: MODEL_NAME,
-    contents: prompt,
+    contents: [{role: "user", parts: [{ text: prompt }] }],
     config: {
         responseMimeType: 'text/plain'
     }
   });
 
-  return response.text ? response.text.trim() : "Topik Baru";
+  return response.text?.trim() ?? "Topik Baru";
 };
 
 // --- SINGLE STAGE GENERATION ---
@@ -44,9 +55,9 @@ export const generateChapters = async (topic: string, userContext: string): Prom
     5. **No Numbering**: JANGAN sertakan nomor bab dalam field title (misal: "1. Pendahuluan"). Cukup judulnya saja (misal: "Pendahuluan"). Aplikasi akan memberi nomor otomatis.
   `;
 
-  const response = await ai.models.generateContent({
+  const result = await getAiClient().models.generateContent({
     model: MODEL_NAME,
-    contents: prompt,
+    contents: [{role: "user", parts: [{ text: prompt }] }],
     config: {
       responseMimeType: 'application/json',
       responseSchema: {
@@ -69,8 +80,9 @@ export const generateChapters = async (topic: string, userContext: string): Prom
     }
   });
 
-  if (response.text) {
-    return JSON.parse(response.text).chapters;
+  const responseText = result.text;
+  if (responseText) {
+    return JSON.parse(responseText).chapters;
   }
   throw new Error("Gagal membuat bab.");
 };
@@ -88,9 +100,9 @@ export const generateSubChapters = async (parentTopic: string, chapterTitle: str
     5. **No Numbering**: JANGAN sertakan nomor sub-bab dalam field title (misal: "1.1. Konsep"). Cukup judulnya saja (misal: "Konsep").
   `;
 
-  const response = await ai.models.generateContent({
+  const result = await getAiClient().models.generateContent({
     model: MODEL_NAME,
-    contents: prompt,
+    contents: [{role: "user", parts: [{ text: prompt }] }],
     config: {
       responseMimeType: 'application/json',
       responseSchema: {
@@ -117,8 +129,9 @@ export const generateSubChapters = async (parentTopic: string, chapterTitle: str
     }
   });
 
-  if (response.text) {
-    return JSON.parse(response.text).subChapters;
+  const responseText = result.text;
+  if (responseText) {
+    return JSON.parse(responseText).subChapters;
   }
   throw new Error("Gagal membuat sub-bab.");
 };
@@ -150,9 +163,9 @@ export const generateDetails = async (subChapterTitle: string, contextPath: stri
        - Nuansa Teknis atau Detail Penting.
   `;
 
-  const response = await ai.models.generateContent({
+  const result = await getAiClient().models.generateContent({
     model: MODEL_NAME,
-    contents: prompt,
+    contents: [{role: "user", parts: [{ text: prompt }] }],
     config: {
       responseMimeType: 'application/json',
       responseSchema: {
@@ -171,8 +184,9 @@ export const generateDetails = async (subChapterTitle: string, contextPath: stri
     }
   });
 
-  if (response.text) {
-    return JSON.parse(response.text);
+  const responseText = result.text;
+  if (responseText) {
+    return JSON.parse(responseText);
   }
   throw new Error("Gagal membuat penjelasan detail.");
 };

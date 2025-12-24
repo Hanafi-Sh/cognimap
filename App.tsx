@@ -6,7 +6,7 @@ import { ConnectionLayer } from './components/ConnectionLayer';
 import { BrainCircuit, MousePointer2, Save, FolderOpen, RotateCcw, PlusCircle, ZoomIn, ZoomOut } from 'lucide-react';
 import { generateChapters, generateSubChapters, generateDetails, generateTopicTitle } from './services/aiService';
 
-const generateId = () => Math.random().toString(36).substr(2, 9);
+const generateId = () => Math.random().toString(36).substring(2, 11);
 
 const INITIAL_ROOT: NodeData = {
   id: 'root',
@@ -106,10 +106,25 @@ const computeSmartLayout = (nodes: NodeData[]): NodeData[] => {
 
 const App: React.FC = () => {
   const [nodes, setNodes] = useState<NodeData[]>(() => {
-    const saved = localStorage.getItem('cognimap-nodes');
-    const initial = saved ? JSON.parse(saved) : [INITIAL_ROOT];
-    const migrated = initial.map((n: any) => ({...n, contentMinimized: n.contentMinimized ?? true}));
-    return computeSmartLayout(migrated);
+    try {
+      const saved = localStorage.getItem('cognimap-nodes');
+      const initial = saved ? JSON.parse(saved) : [INITIAL_ROOT];
+      const validInitial = Array.isArray(initial) && initial.length > 0 ? initial : [INITIAL_ROOT];
+
+      // Migrasi data yang lebih kuat untuk mencegah error saat memuat data lama/rusak.
+      // Ini memastikan setiap node memiliki semua properti yang diperlukan.
+      const migrated = validInitial.map((n: any) => ({
+        ...INITIAL_ROOT, // Mulai dengan semua nilai default dari INITIAL_ROOT
+        ...n,            // Timpa dengan nilai yang tersimpan
+        id: n.id || generateId(), // Pastikan ID ada, buat baru jika tidak
+        title: n.title || 'Node Rusak', // Beri judul fallback
+        contentMinimized: n.contentMinimized ?? true, // Pastikan properti ini ada
+      }));
+      return computeSmartLayout(migrated);
+    } catch (e) {
+      console.error("Gagal memuat data tersimpan, mereset ke default:", e);
+      return computeSmartLayout([INITIAL_ROOT]);
+    }
   });
   
   const [canvasState, setCanvasState] = useState<CanvasState>({ offset: { x: 0, y: 0 }, scale: 1 });
@@ -304,8 +319,12 @@ const App: React.FC = () => {
          const match = node.title.match(/^(\d+)\./);
          const chapterNum = match ? match[1] : '1';
 
+         // Ambil judul parent (Root) sebagai konteks topik
+         const parentNode = nodes.find(n => n.id === node.parentId);
+         const parentTopic = parentNode ? parentNode.title : "Topik";
+
          try {
-            const subChapters = await generateSubChapters("Topik", node.title, prompt);
+            const subChapters = await generateSubChapters(parentTopic, node.title, prompt);
             const newNodes: NodeData[] = subChapters.map((sub, index) => {
                 // Remove any existing numbering from AI response
                 const cleanTitle = sub.title.replace(/^[\d.]+\s*/, '');
